@@ -7,6 +7,7 @@
 import requests
 import base64
 import pandas as pd
+import streamlit as st
 
 # Adjust display options
 pd.set_option('display.max_rows', None)   # Show all rows
@@ -48,12 +49,13 @@ import pandas as pd
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
+@st.cache_data
 def get_trending_playlist_data(playlist_id, access_token):
     # Set up Spotipy with the access token
     sp = spotipy.Spotify(auth=access_token)
 
     # Get the tracks from the playlist
-    playlist_tracks = sp.playlist_tracks(playlist_id, fields='items(track(id, name, artists, album(id, name)))')
+    playlist_tracks = sp.playlist_tracks(playlist_id, fields='items(track(id, name, artists, album(id, name)))', limit = 90)
 
     # Extract relevant information and store in a list of dictionaries
     music_data = []
@@ -151,7 +153,7 @@ data = music_df
 
 # In[93]:
 
-
+@st.cache_data
 # Function to calculate weighted popularity scores based on release date
 def calculate_weighted_popularity(release_date):
     # Convert the release date to datetime object
@@ -178,7 +180,7 @@ music_features_scaled = scaler.fit_transform(music_features)
 
 # In[95]:
 
-
+@st.cache_data
 # a function to get content-based recommendations based on music features
 def content_based_recommendations(input_song_name, num_recommendations=5):
     if input_song_name not in music_df['Track Name'].values:
@@ -199,10 +201,9 @@ def content_based_recommendations(input_song_name, num_recommendations=5):
 
     return content_based_recommendations
 
-
 # In[97]:
 
-
+@st.cache_data
 # a function to get hybrid recommendations based on weighted popularity
 def hybrid_rec(input_song_name, num_recommendations=5, alpha=0.5):
     if input_song_name not in music_df['Track Name'].values:
@@ -247,7 +248,6 @@ def hybrid_rec(input_song_name, num_recommendations=5, alpha=0.5):
 
     return hybrid_recommendations
 
-
 # In[98]:
 
 
@@ -271,7 +271,29 @@ recommendations
 
 import streamlit as st
 import pandas as pd
-# Your existing imports and code
+
+st.title('Spotify Music Recommendations')
+
+# Replace hardcoded playlist_id and song_name with user inputs
+playlist_id = st.text_input("Enter Spotify Playlist ID:", '3rNqxghsSqsloXkPly9FIU')
+song_name = st.text_input("Enter a song name for recommendations:")
+
+if playlist_id and song_name:
+    # You might need to ensure that access_token is fetched or defined before this line
+    music_df = get_trending_playlist_data(playlist_id, access_token)
+    st.dataframe(music_df.head())  # Display the first few rows of the dataframe
+
+    if st.button('Get Recommendations'):
+        recommendations = hybrid_rec(song_name, num_recommendations=5)
+        st.write(f"Hybrid recommended songs for '{song_name}':")
+        st.dataframe(recommendations)
+
+
+
+
+'''
+import streamlit as st
+import pandas as pd
 
 # Import Streamlit at the beginning
 st.title('Spotify Music Recommendations')
@@ -289,3 +311,4 @@ if playlist_id and song_name:
         recommendations = hybrid_rec(song_name, num_recommendations=5)
         st.write(f"Hybrid recommended songs for '{song_name}':")
         st.dataframe(recommendations)
+'''
